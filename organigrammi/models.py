@@ -3,6 +3,8 @@ from __future__ import absolute_import, unicode_literals
 
 from django.conf import settings
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
@@ -51,6 +53,10 @@ class Persona(TimeStampedModel, RangeValiditaModel):
     def __str__(self):
         return '{} {}'.format(self.cognome, self.nome)
 
+    def get_absolute_url(self):
+        return '{}?id={}'.format(
+            reverse(admin_urlname(self._meta, 'changelist')), self.pk,)
+
 
 @python_2_unicode_compatible
 class Mandato(TimeStampedModel, RangeValiditaModel):
@@ -96,7 +102,7 @@ class GruppoConsigliare(TimeStampedModel, RangeValiditaModel):
 
 @python_2_unicode_compatible
 class Assessore(TimeStampedModel, RangeValiditaModel):
-    mandato = models.ForeignKey(Mandato)
+    mandato = models.ForeignKey(Mandato, related_name='assessori')
     persona = models.OneToOneField(Persona)
     delega = models.CharField(max_length=500)
 
@@ -107,10 +113,14 @@ class Assessore(TimeStampedModel, RangeValiditaModel):
     def __str__(self):
         return 'Ass. {}'.format(self.persona)
 
+    def get_absolute_url(self):
+        return '{}?id={}'.format(
+            reverse(admin_urlname(self._meta, 'changelist')), self.pk,)
+
 
 @python_2_unicode_compatible
 class Consigliere(TimeStampedModel, RangeValiditaModel):
-    mandato = models.ForeignKey(Mandato)
+    mandato = models.ForeignKey(Mandato, related_name='consiglieri')
     persona = models.ForeignKey(Persona)
     gruppoconsigliare = models.ForeignKey(GruppoConsigliare,
                                           blank=True, null=True)
@@ -128,24 +138,73 @@ class Consigliere(TimeStampedModel, RangeValiditaModel):
             reverse(admin_urlname(self._meta, 'changelist')), self.pk,)
 
 
+class SessioneAssemblea(TimeStampedModel):
+    data_svolgimento = models.DateField()
+    content_type = models.ForeignKey(ContentType)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        ordering = ('data_svolgimento',)
+        verbose_name = 'Sessione Assemblea'
+        verbose_name_plural = 'Sessioni Assemblea'
+        unique_together = ('data_svolgimento', 'object_id', 'content_type', )
+
+    def __str__(self):
+        return '{} del {:%d/%m/%Y}'.format(str(self.content_type.name),
+                                           self.data_svolgimento)
+
+
 class Assemblea(TimeStampedModel):
-    mandato = models.ForeignKey(Mandato)
+    sessioni = GenericRelation(SessioneAssemblea)
+
+    class Meta:
+        abstract = True
+
+    @property
+    def ld_componenti(self):
+        raise NotImplemented()
 
 
 class Consiglio(Assemblea):
+    mandato = models.OneToOneField(Mandato)
 
     class Meta:
         verbose_name = 'Consiglio'
         verbose_name_plural = 'Consigli'
 
+    @property
+    def ld_componenti(self):
+        return (
+            [(c.get_absolute_url(), '{} ({})'.format(c, ruolo))
+             for c, ruolo in [(self.mandato.boss, 'Sindaco'),
+                              (self.mandato.speacker, 'Presidente')]]
+            + [(c.get_absolute_url(), '{} (Assessore)'.format(c.persona))
+               for c in self.mandato.assessori.all()]
+            + [(c.get_absolute_url(), '{} (Consigliere)'.format(c.persona))
+               for c in self.mandato.consiglieri.all()]
+        )
+
 
 class Giunta(Assemblea):
+    mandato = models.OneToOneField(Mandato)
+
     class Meta:
         verbose_name = 'Giunta'
         verbose_name_plural = 'Giunte'
 
+    @property
+    def ld_componenti(self):
+        return (
+            [(self.mandato.boss.get_absolute_url(), '{} ({})'.format(
+                self.mandato.boss, 'Sindaco'))]
+            + [(c.get_absolute_url(), '{} (Assessore)'.format(c.persona))
+               for c in self.mandato.assessori.all()]
+        )
+
 
 class CommissioneConsigliare(Assemblea):
+    mandato = models.ForeignKey(Mandato)
     titolo = models.CharField(max_length=500)
     boss = models.OneToOneField(
         Consigliere, verbose_name="Presidente della commissione",
@@ -159,41 +218,19 @@ class CommissioneConsigliare(Assemblea):
         verbose_name = 'Commissione Consigliare'
         verbose_name_plural = 'Commissioni Consigliari'
 
-
-class SessioneAssembla(TimeStampedModel):
-    data_svolgimento = models.DateField()
-    assembla = models.ForeignKey(Assemblea)
-
-    class Meta:
-        verbose_name = 'Sessione Assembla'
-        verbose_name_plural = 'Sessioni Assembla'
-        unique_together = ('data_svolgimento', 'assembla')
-
-
-class SessioneGiunta(SessioneAssembla):
-
-    class Meta:
-        verbose_name = 'Sessione di Giunta'
-        verbose_name_plural = 'Sessioni di Giunta'
-
-
-class SessioneConsiglio(SessioneAssembla):
-
-    class Meta:
-        verbose_name = 'Sessione di Consiglio'
-        verbose_name_plural = 'Sessioni di Consiglio'
-
-
-class SessioneCommissioneConsigliare(SessioneAssembla):
-
-    class Meta:
-        verbose_name = 'Sessione di Commissione Consigliare'
-        verbose_name_plural = 'Sessioni di Commissione Consigliare'
+    @property
+    def ld_componenti(self):
+        result = ([(c.get_absolute_url(), '{} ({})'.format(c.persona, ruolo))
+                   for c, ruolo in [(self.boss, 'Presidente'),
+                                    (self.vice, 'Vice')]] +
+                  [(c.get_absolute_url(), c.persona)
+                   for c in self.componenti.all()])
+        return result
 
 
 class Presenza(TimeStampedModel):
-    sessione = models.ForeignKey(SessioneAssembla)
     persona = models.ForeignKey(Persona)
+    sessione = models.ForeignKey(SessioneAssemblea)
     presenza = models.BooleanField(default=False, blank=True)
 
     class Meta:

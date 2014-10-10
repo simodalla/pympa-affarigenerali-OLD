@@ -2,9 +2,11 @@
 from __future__ import unicode_literals, absolute_import
 
 from django.contrib import admin
+from django.contrib.contenttypes.admin import GenericTabularInline
 
 from .models import (Ente, Mandato, Persona, GruppoConsigliare, Assessore,
-                     Consigliere, CommissioneConsigliare)
+                     Consigliere, SessioneAssemblea, CommissioneConsigliare,
+                     Consiglio, Giunta)
 
 
 RANGE_VALIDITA_SECTION = ('Range di validità',
@@ -82,27 +84,45 @@ class AssessoreAdmin(admin.ModelAdmin):
     search_fields = ('persona__cognome', 'persona__nome', 'delega')
 
 
-@admin.register(CommissioneConsigliare)
-class CommissioneConsigliareAdmin(admin.ModelAdmin):
-    fieldsets = (
-        (None, {'fields': ('mandato', 'titolo', 'boss', 'vice',
-                           'componenti')}),
-    )
-    filter_horizontal = ('componenti', )
-    list_display = ('titolo', 'mandato', 'boss', 'vice', 'ld_componenti')
-    list_filter = ('mandato',)
-    search_fields = ('titolo', 'mandato__ente__titolo',)
+class SessioneAssembleaInline(GenericTabularInline):
+    model = SessioneAssemblea
+
+
+class SessioneAssembleaAdminMixin():
+    inlines = [SessioneAssembleaInline]
+
+    def ld_sessioni_assemblea(self, obj):
+        """
+        :type obj: organigrammi.models.CommissioneConsigliare
+        """
+        return '<br />'.join([str(c) for c in obj.sessioni.all()])
+    ld_sessioni_assemblea.short_description = 'Sessioni'
+    ld_sessioni_assemblea.allow_tags = True
 
     def ld_componenti(self, obj):
         """
         :type obj: organigrammi.models.CommissioneConsigliare
         """
-        links = ['<a href="{}">{}</a>'.format(
-            c.get_absolute_url(), c.persona) for c in obj.componenti.all()]
+        links = ['<a href="{}">{}</a>'.format(url, label)
+                 for url, label in obj.ld_componenti]
         return '<br />'.join(links)
-
     ld_componenti.short_description = 'Componenti'
     ld_componenti.allow_tags = True
+
+
+@admin.register(CommissioneConsigliare)
+class CommissioneConsigliareAdmin(SessioneAssembleaAdminMixin,
+                                  admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ('mandato', 'titolo', 'boss', 'vice',
+                           'componenti',)}),
+    )
+    filter_horizontal = ('componenti', )
+    list_display = ('titolo', 'mandato', 'ld_componenti',
+                    'ld_sessioni_assemblea')
+    list_filter = ('mandato',)
+    list_select_related = True
+    search_fields = ('titolo', 'mandato__ente__titolo',)
 
     def get_search_fields(self, request):
         search_fields = list(super(
@@ -111,3 +131,12 @@ class CommissioneConsigliareAdmin(admin.ModelAdmin):
             search_fields += ['{}__persona__cognome'.format(field),
                               '{}__persona__nome'.format(field)]
         return tuple(set(search_fields))
+
+
+@admin.register(Consiglio)
+class ConsiglioAdmin(SessioneAssembleaAdminMixin, admin.ModelAdmin):
+    list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea')
+
+@admin.register(Giunta)
+class GiuntaAdmin(SessioneAssembleaAdminMixin, admin.ModelAdmin):
+    list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea')

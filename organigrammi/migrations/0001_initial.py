@@ -2,14 +2,15 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import django.utils.timezone
-from django.conf import settings
 import model_utils.fields
+from django.conf import settings
+import django.utils.timezone
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
+        ('contenttypes', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -17,10 +18,10 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Assessore',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)),
-                ('created', model_utils.fields.AutoCreatedField(verbose_name='created', editable=False, default=django.utils.timezone.now)),
-                ('modified', model_utils.fields.AutoLastModifiedField(verbose_name='modified', editable=False, default=django.utils.timezone.now)),
-                ('inizio_validita', models.DateTimeField(verbose_name='Data inizio validita', default=django.utils.timezone.now)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('inizio_validita', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Data inizio validita')),
                 ('fine_validita', models.DateTimeField(null=True, blank=True, verbose_name='Data fine validita')),
                 ('delega', models.CharField(max_length=500)),
             ],
@@ -31,13 +32,28 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
+            name='CommissioneConsigliare',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('titolo', models.CharField(max_length=500)),
+            ],
+            options={
+                'verbose_name': 'Commissione Consigliare',
+                'verbose_name_plural': 'Commissioni Consigliari',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='Consigliere',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)),
-                ('created', model_utils.fields.AutoCreatedField(verbose_name='created', editable=False, default=django.utils.timezone.now)),
-                ('modified', model_utils.fields.AutoLastModifiedField(verbose_name='modified', editable=False, default=django.utils.timezone.now)),
-                ('inizio_validita', models.DateTimeField(verbose_name='Data inizio validita', default=django.utils.timezone.now)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('inizio_validita', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Data inizio validita')),
                 ('fine_validita', models.DateTimeField(null=True, blank=True, verbose_name='Data fine validita')),
+                ('capogruppo', models.BooleanField(default=False)),
             ],
             options={
                 'verbose_name': 'Consigliere',
@@ -46,15 +62,28 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
+            name='Consiglio',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+            ],
+            options={
+                'verbose_name': 'Consiglio',
+                'verbose_name_plural': 'Consigli',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='Ente',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)),
-                ('created', model_utils.fields.AutoCreatedField(verbose_name='created', editable=False, default=django.utils.timezone.now)),
-                ('modified', model_utils.fields.AutoLastModifiedField(verbose_name='modified', editable=False, default=django.utils.timezone.now)),
-                ('inizio_validita', models.DateTimeField(verbose_name='Data inizio validita', default=django.utils.timezone.now)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('inizio_validita', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Data inizio validita')),
                 ('fine_validita', models.DateTimeField(null=True, blank=True, verbose_name='Data fine validita')),
-                ('nome', models.CharField(unique=True, max_length=200)),
-                ('ente_padre', models.ForeignKey(null=True, to='organigrammi.Ente', blank=True)),
+                ('titolo', models.CharField(max_length=200, unique=True)),
+                ('ente_padre', models.ForeignKey(null=True, blank=True, to='organigrammi.Ente')),
             ],
             options={
                 'verbose_name': 'Ente',
@@ -63,14 +92,27 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
+            name='Giunta',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+            ],
+            options={
+                'verbose_name': 'Giunta',
+                'verbose_name_plural': 'Giunte',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='GruppoConsigliare',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)),
-                ('created', model_utils.fields.AutoCreatedField(verbose_name='created', editable=False, default=django.utils.timezone.now)),
-                ('modified', model_utils.fields.AutoLastModifiedField(verbose_name='modified', editable=False, default=django.utils.timezone.now)),
-                ('inizio_validita', models.DateTimeField(verbose_name='Data inizio validita', default=django.utils.timezone.now)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('inizio_validita', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Data inizio validita')),
                 ('fine_validita', models.DateTimeField(null=True, blank=True, verbose_name='Data fine validita')),
-                ('nome', models.CharField(max_length=200)),
+                ('titolo', models.CharField(max_length=200)),
             ],
             options={
                 'verbose_name': 'Gruppo Consigliare',
@@ -81,11 +123,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Mandato',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)),
-                ('created', model_utils.fields.AutoCreatedField(verbose_name='created', editable=False, default=django.utils.timezone.now)),
-                ('modified', model_utils.fields.AutoLastModifiedField(verbose_name='modified', editable=False, default=django.utils.timezone.now)),
-                ('data_inizio', models.DateField()),
-                ('data_fine', models.DateField()),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('inizio_validita', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Data inizio validita')),
+                ('fine_validita', models.DateTimeField(null=True, blank=True, verbose_name='Data fine validita')),
             ],
             options={
                 'verbose_name': 'Mandato',
@@ -96,15 +138,16 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Persona',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, verbose_name='ID', serialize=False)),
-                ('created', model_utils.fields.AutoCreatedField(verbose_name='created', editable=False, default=django.utils.timezone.now)),
-                ('modified', model_utils.fields.AutoLastModifiedField(verbose_name='modified', editable=False, default=django.utils.timezone.now)),
-                ('inizio_validita', models.DateTimeField(verbose_name='Data inizio validita', default=django.utils.timezone.now)),
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('inizio_validita', models.DateTimeField(default=django.utils.timezone.now, verbose_name='Data inizio validita')),
                 ('fine_validita', models.DateTimeField(null=True, blank=True, verbose_name='Data fine validita')),
-                ('cognome', models.CharField(verbose_name='Cognome', max_length=80)),
-                ('nome', models.CharField(verbose_name='Nome', max_length=80)),
-                ('ente', models.ForeignKey(null=True, to='organigrammi.Ente', blank=True)),
-                ('user', models.OneToOneField(null=True, to=settings.AUTH_USER_MODEL, blank=True, verbose_name='Utente del sistema')),
+                ('cognome', models.CharField(max_length=80, verbose_name='Cognome')),
+                ('nome', models.CharField(max_length=80, verbose_name='Nome')),
+                ('email', models.EmailField(null=True, max_length=75, blank=True)),
+                ('ente', models.ForeignKey(null=True, blank=True, to='organigrammi.Ente')),
+                ('user', models.OneToOneField(verbose_name='Utente del sistema', null=True, blank=True, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name': 'Persona',
@@ -112,10 +155,55 @@ class Migration(migrations.Migration):
             },
             bases=(models.Model,),
         ),
+        migrations.CreateModel(
+            name='Presenza',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('presenza', models.BooleanField(default=False)),
+                ('persona', models.ForeignKey(to='organigrammi.Persona')),
+            ],
+            options={
+                'verbose_name': 'Presenza',
+                'verbose_name_plural': 'Presenze',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='SessioneAssembla',
+            fields=[
+                ('id', models.AutoField(primary_key=True, auto_created=True, serialize=False, verbose_name='ID')),
+                ('created', model_utils.fields.AutoCreatedField(editable=False, default=django.utils.timezone.now, verbose_name='created')),
+                ('modified', model_utils.fields.AutoLastModifiedField(editable=False, default=django.utils.timezone.now, verbose_name='modified')),
+                ('data_svolgimento', models.DateField()),
+                ('object_id', models.PositiveIntegerField()),
+                ('content_type', models.ForeignKey(to='contenttypes.ContentType')),
+            ],
+            options={
+                'verbose_name': 'Sessione Assembla',
+                'verbose_name_plural': 'Sessioni Assembla',
+            },
+            bases=(models.Model,),
+        ),
+        migrations.AlterUniqueTogether(
+            name='sessioneassembla',
+            unique_together=set([('data_svolgimento', 'object_id', 'content_type')]),
+        ),
+        migrations.AddField(
+            model_name='presenza',
+            name='sessione',
+            field=models.ForeignKey(to='organigrammi.SessioneAssembla'),
+            preserve_default=True,
+        ),
+        migrations.AlterUniqueTogether(
+            name='presenza',
+            unique_together=set([('sessione', 'persona')]),
+        ),
         migrations.AddField(
             model_name='mandato',
             name='boss',
-            field=models.OneToOneField(null=True, to='organigrammi.Persona', blank=True, verbose_name="Sindaco o Presidente dell'unione", related_name='boss_mandato'),
+            field=models.OneToOneField(verbose_name="Sindaco o Presidente dell'unione", null=True, related_name='boss_mandato', blank=True, to='organigrammi.Persona'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -127,13 +215,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='mandato',
             name='speacker',
-            field=models.OneToOneField(null=True, to='organigrammi.Persona', blank=True, verbose_name='Presidente del consiglio', related_name='speacker_mandato'),
+            field=models.OneToOneField(verbose_name='Presidente del consiglio', null=True, related_name='speacker_mandato', blank=True, to='organigrammi.Persona'),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='mandato',
             name='vice',
-            field=models.OneToOneField(null=True, to='organigrammi.Persona', blank=True, verbose_name="Vicesindaco o Vicepresidente  dell'unione", related_name='vice_mandato'),
+            field=models.OneToOneField(verbose_name="Vicesindaco o Vicepresidente  dell'unione", null=True, related_name='vice_mandato', blank=True, to='organigrammi.Persona'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='mandato',
+            name='vice_speacker',
+            field=models.OneToOneField(verbose_name='Vicepresidente del consiglio', null=True, related_name='vicespeacker_mandato', blank=True, to='organigrammi.Persona'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -143,9 +237,21 @@ class Migration(migrations.Migration):
             preserve_default=True,
         ),
         migrations.AddField(
+            model_name='giunta',
+            name='mandato',
+            field=models.OneToOneField(to='organigrammi.Mandato'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='consiglio',
+            name='mandato',
+            field=models.OneToOneField(to='organigrammi.Mandato'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
             model_name='consigliere',
             name='gruppoconsigliare',
-            field=models.ForeignKey(null=True, to='organigrammi.GruppoConsigliare', blank=True),
+            field=models.ForeignKey(null=True, blank=True, to='organigrammi.GruppoConsigliare'),
             preserve_default=True,
         ),
         migrations.AddField(
@@ -158,6 +264,30 @@ class Migration(migrations.Migration):
             model_name='consigliere',
             name='persona',
             field=models.ForeignKey(to='organigrammi.Persona'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='commissioneconsigliare',
+            name='boss',
+            field=models.OneToOneField(verbose_name='Presidente della commissione', null=True, related_name='boss_commissione', blank=True, to='organigrammi.Consigliere'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='commissioneconsigliare',
+            name='componenti',
+            field=models.ManyToManyField(null=True, to='organigrammi.Consigliere', blank=True),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='commissioneconsigliare',
+            name='mandato',
+            field=models.ForeignKey(to='organigrammi.Mandato'),
+            preserve_default=True,
+        ),
+        migrations.AddField(
+            model_name='commissioneconsigliare',
+            name='vice',
+            field=models.OneToOneField(verbose_name='Vicepresidente della commissione', null=True, related_name='vice_commisione', blank=True, to='organigrammi.Consigliere'),
             preserve_default=True,
         ),
         migrations.AddField(
