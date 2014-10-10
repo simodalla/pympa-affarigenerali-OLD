@@ -36,6 +36,7 @@ class PersonaAdmin(admin.ModelAdmin):
         RANGE_VALIDITA_SECTION)
     list_display = ('cognome', 'nome', 'ente', 'user', 'inizio_validita',
                     'fine_validita')
+    search_fields = ('cognome', 'nome', 'ente__titolo',)
 
 
 @admin.register(Ente)
@@ -58,6 +59,18 @@ class MandatoAdmin(admin.ModelAdmin):
     inlines = [AssessoreInline, GruppoConsigliareInline, ConsigliereInline]
 
 
+@admin.register(Consigliere)
+class ConsigliereAdmin(admin.ModelAdmin):
+    fieldsets = (
+        ('None', {'fields': ('persona', 'mandato', 'gruppoconsigliare',
+                             'capogruppo',)}),
+        RANGE_VALIDITA_SECTION)
+    list_filter = ('gruppoconsigliare',)
+    list_display = ('persona', 'mandato', 'gruppoconsigliare',
+                    'capogruppo', 'inizio_validita', 'fine_validita')
+    search_fields = ('persona__cognome', 'persona__nome',)
+
+
 @admin.register(CommissioneConsigliare)
 class CommissioneConsigliareAdmin(admin.ModelAdmin):
     fieldsets = (
@@ -65,14 +78,24 @@ class CommissioneConsigliareAdmin(admin.ModelAdmin):
                              'componenti')}),
     )
     filter_horizontal = ('componenti',)
-    list_display = ('mandato', 'boss', 'vice',)
+    list_display = ('titolo', 'mandato', 'boss', 'vice', 'ld_componenti')
+    list_filter = ('mandato',)
+    search_fields = ('titolo', 'mandato__ente__titolo',)
 
     def ld_componenti(self, obj):
         """
         :type obj: organigrammi.models.CommissioneConsigliare
         """
         links = ['<a href="{}">{}</a>'.format(
-            c.get_absolute_url()) for c in obj.componenti]
+            c.get_absolute_url(), c.persona) for c in obj.componenti.all()]
         return '<br />'.join(links)
     ld_componenti.short_description = 'Componenti'
     ld_componenti.allow_tags = True
+    
+    def get_search_fields(self, request):
+        search_fields = list(super(
+            CommissioneConsigliareAdmin, self).get_search_fields(request))
+        for field in ['boss', 'vice', 'componenti']:
+            search_fields += ['{}__persona__cognome'.format(field),
+                              '{}__persona__nome'.format(field)]
+        return tuple(set(search_fields))

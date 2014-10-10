@@ -2,6 +2,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.conf import settings
+from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
@@ -104,7 +105,7 @@ class Assessore(TimeStampedModel, RangeValiditaModel):
         verbose_name_plural = 'Assessori'
 
     def __str__(self):
-        return '{}, {}'.format(self.persona, self.delega)
+        return 'Ass. {}'.format(self.persona)
 
 
 @python_2_unicode_compatible
@@ -120,11 +121,11 @@ class Consigliere(TimeStampedModel, RangeValiditaModel):
         verbose_name_plural = 'Consiglieri'
 
     def __str__(self):
-        return 'Consigliere {}'.format(self.persona)
+        return 'Cons. {}'.format(self.persona)
 
     def get_absolute_url(self):
-        from django.contrib.admin.templatetags.admin_urls import admin_urlname
-        reverse(admin_urlname(self), 'change', args=(self.pk,))
+        return '{}?id={}'.format(
+            reverse(admin_urlname(self._meta, 'changelist')), self.pk,)
 
 
 class Assemblea(TimeStampedModel):
