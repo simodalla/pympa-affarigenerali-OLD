@@ -1,27 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-test_openpa-organigrammi
-------------
 
-Tests for `openpa-organigrammi` models module.
-"""
+from unittest import mock
 
 from django.test import TestCase
 from django.utils import timezone
-from unittest import mock
 
 from organigrammi.models import (SessioneAssemblea, Presenza, Consiglio,
                                  Mandato, Ente, Persona)
 
 
-def make_componenti(n=2):
-    return [Persona.objects.create(cognome='cp%s' % i, nome='np%s' % i)
-            for i in range(0, n)]
-
-
 class TestSessioneAssemblea(TestCase):
+
+    def make_componenti(self, n=2):
+        return [Persona.objects.create(cognome='cp%s' % i, nome='np%s' % i)
+                for i in range(0, n)]
 
     def setUp(self):
         self.mandato = Mandato.objects.create(
@@ -31,9 +25,9 @@ class TestSessioneAssemblea(TestCase):
             data_svolgimento=timezone.now(), content_object=self.assemblea)
 
     @mock.patch('organigrammi.models.Assemblea.componenti',
-                new_callable=mock.PropertyMock(
-                    return_value=make_componenti(2)))
+                new_callable=mock.PropertyMock)
     def test_create_presenze(self, mock_componenti):
+        mock_componenti.return_value = self.make_componenti(2)
         presenze = self.sessione.create_presenze()
         self.assertEqual(len(presenze), len(self.assemblea.componenti))
         for field, expected in [('sessione', {self.sessione}),

@@ -155,12 +155,18 @@ class GiuntaAdmin(SessioneAssembleaAdminMixin, admin.ModelAdmin):
 
 @admin.register(SessioneAssemblea)
 class SessioneAssembleaAdmin(admin.ModelAdmin):
-    readonly_fields = ('data_svolgimento', 'content_type', 'object_id')
+    date_hierarchy = 'data_svolgimento'
     inlines = [PresenzaInline]
+    list_display = ('data_svolgimento', 'content_type')
+    list_filter = ('content_type',)
+    readonly_fields = ('data_svolgimento', 'content_type', 'object_id')
 
     def change_view(self, request, object_id, *args, **kwargs):
         sessione = SessioneAssemblea.objects.get(pk=object_id)
-        if sessione.presenze.count == 0:
+        # print(sessione)
+        # print(sessione.presenze.all())
+        if sessione.presenze.count() == 0:
+            print(sessione.create_presenze)
             sessione.create_presenze()
         return super(SessioneAssembleaAdmin, self).change_view(
             request, object_id, *args, **kwargs)
