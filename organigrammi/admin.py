@@ -3,10 +3,12 @@ from __future__ import unicode_literals, absolute_import
 
 from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
+from django.contrib.admin.templatetags.admin_urls import admin_urlname
+from django.core.urlresolvers import reverse
 
 from .models import (Ente, Mandato, Persona, GruppoConsigliare, Assessore,
                      Consigliere, SessioneAssemblea, CommissioneConsigliare,
-                     Consiglio, Giunta)
+                     Consiglio, Giunta, Presenza)
 
 
 RANGE_VALIDITA_SECTION = ('Range di validità',
@@ -29,6 +31,10 @@ class ConsigliereInline(admin.TabularInline):
     fields = ('persona', 'gruppoconsigliare', 'capogruppo')
     model = Consigliere
     extra = 1
+
+
+class PresenzaInline(admin.TabularInline):
+    model = Presenza
 
 
 @admin.register(Persona)
@@ -95,7 +101,11 @@ class SessioneAssembleaAdminMixin():
         """
         :type obj: organigrammi.models.CommissioneConsigliare
         """
-        return '<br />'.join([str(c) for c in obj.sessioni.all()])
+        return '<br />'.join(
+            ['{}&nbsp;<a href="{}">presenze'
+             '</a>'.format(c, reverse(admin_urlname(c._meta, 'change'),
+                                      args=(c.pk,)))
+             for c in obj.sessioni.all()])
     ld_sessioni_assemblea.short_description = 'Sessioni'
     ld_sessioni_assemblea.allow_tags = True
 
@@ -115,9 +125,9 @@ class CommissioneConsigliareAdmin(SessioneAssembleaAdminMixin,
                                   admin.ModelAdmin):
     fieldsets = (
         (None, {'fields': ('mandato', 'titolo', 'boss', 'vice',
-                           'componenti',)}),
+                           'consiglieri',)}),
     )
-    filter_horizontal = ('componenti', )
+    filter_horizontal = ('consiglieri', )
     list_display = ('titolo', 'mandato', 'ld_componenti',
                     'ld_sessioni_assemblea')
     list_filter = ('mandato',)
@@ -127,7 +137,7 @@ class CommissioneConsigliareAdmin(SessioneAssembleaAdminMixin,
     def get_search_fields(self, request):
         search_fields = list(super(
             CommissioneConsigliareAdmin, self).get_search_fields(request))
-        for field in ['boss', 'vice', 'componenti']:
+        for field in ['boss', 'vice', 'consiglieri']:
             search_fields += ['{}__persona__cognome'.format(field),
                               '{}__persona__nome'.format(field)]
         return tuple(set(search_fields))
@@ -137,6 +147,20 @@ class CommissioneConsigliareAdmin(SessioneAssembleaAdminMixin,
 class ConsiglioAdmin(SessioneAssembleaAdminMixin, admin.ModelAdmin):
     list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea')
 
+
 @admin.register(Giunta)
 class GiuntaAdmin(SessioneAssembleaAdminMixin, admin.ModelAdmin):
     list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea')
+
+
+@admin.register(SessioneAssemblea)
+class SessioneAssembleaAdmin(admin.ModelAdmin):
+    readonly_fields = ('data_svolgimento', 'content_type', 'object_id')
+    inlines = [PresenzaInline]
+
+    def change_view(self, request, object_id, *args, **kwargs):
+        sessione = SessioneAssemblea.objects.get(pk=object_id)
+        if sessione.presenze.count == 0:
+            sessione.create_presenze()
+        return super(SessioneAssembleaAdmin, self).change_view(
+            request, object_id, *args, **kwargs)

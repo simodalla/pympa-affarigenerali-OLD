@@ -4,7 +4,8 @@ from __future__ import absolute_import, unicode_literals
 from django.conf import settings
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.fields import (GenericForeignKey,
+                                                GenericRelation)
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
@@ -154,6 +155,18 @@ class SessioneAssemblea(TimeStampedModel):
         return '{} del {:%d/%m/%Y}'.format(str(self.content_type.name),
                                            self.data_svolgimento)
 
+    def create_presenze(self):
+        """
+        :return: list of tuples (Presenza object, created) for all
+                 assemblea.componenti
+        :rtype: list[(organigrammi.models.Presenza, boolean),]
+        """
+        assemblea = self.content_type.get_object_for_this_type(
+            pk=self.object_id)
+        return [Presenza.objects.get_or_create(sessione=self,
+                                               persona=componente)
+                for componente in assemblea.componenti]
+
 
 class Assemblea(TimeStampedModel):
     sessioni = GenericRelation(SessioneAssemblea)
@@ -163,6 +176,18 @@ class Assemblea(TimeStampedModel):
 
     @property
     def ld_componenti(self):
+        raise NotImplemented()
+
+    @property
+    def componenti(self):
+        return Persona.objects.filter(pk__in=self.pks_componenti)
+
+    @property
+    def pks_componenti(self):
+        """
+        :return: iterable of ids of Persone objects that are componenti
+        :rtype: iterable
+        """
         raise NotImplemented()
 
 
@@ -212,7 +237,7 @@ class CommissioneConsigliare(Assemblea):
     vice = models.OneToOneField(
         Consigliere, verbose_name="Vicepresidente della commissione",
         related_name='vice_commisione', blank=True, null=True)
-    componenti = models.ManyToManyField(Consigliere, blank=True, null=True)
+    consiglieri = models.ManyToManyField(Consigliere, blank=True, null=True)
 
     class Meta:
         verbose_name = 'Commissione Consigliare'
@@ -224,13 +249,19 @@ class CommissioneConsigliare(Assemblea):
                    for c, ruolo in [(self.boss, 'Presidente'),
                                     (self.vice, 'Vice')]] +
                   [(c.get_absolute_url(), c.persona)
-                   for c in self.componenti.all()])
+                   for c in self.consiglieri.all()])
         return result
+
+    @property
+    def pks_componenti(self):
+        ids = set([self.boss.persona.pk, self.vice.persona.pk] +
+                  list(self.consiglieri.values_list('persona_id', flat=True)))
+        return ids
 
 
 class Presenza(TimeStampedModel):
     persona = models.ForeignKey(Persona)
-    sessione = models.ForeignKey(SessioneAssemblea)
+    sessione = models.ForeignKey(SessioneAssemblea, related_name='presenze')
     presenza = models.BooleanField(default=False, blank=True)
 
     class Meta:
