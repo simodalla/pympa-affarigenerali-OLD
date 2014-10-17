@@ -155,7 +155,11 @@ class SessioneAssemblea(TimeStampedModel):
         return '{} del {:%d/%m/%Y}'.format(str(self.content_type.name),
                                            self.data_svolgimento)
 
-    def create_presenze(self):
+    @property
+    def assemblea(self):
+        return self.content_type.get_object_for_this_type(pk=self.object_id)
+
+    def create_presenze_of_componenti(self):
         """
         :return: list of tuples (Presenza object, created) for all
                  assemblea.componenti
@@ -189,6 +193,17 @@ class Assemblea(TimeStampedModel):
         :rtype: iterable
         """
         raise NotImplemented()
+
+    def has_componente(self, persona):
+        """
+        Return if Persona object passed into args is in defaul componenti
+        propperty
+
+        :param persona:
+        :type persona: organigrammi.models.Persona
+        :rtype: bool
+        """
+        return True if persona.pk in self.pks_componenti else False
 
 
 class Consiglio(Assemblea):
@@ -268,3 +283,8 @@ class Presenza(TimeStampedModel):
         verbose_name = 'Presenza'
         verbose_name_plural = 'Presenze'
         unique_together = ('sessione', 'persona')
+
+    def is_of_componente(self):
+        if self.sessione.assemblea.has_componente(self.persona):
+            return True
+        return False

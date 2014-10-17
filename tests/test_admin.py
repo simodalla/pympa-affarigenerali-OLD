@@ -37,20 +37,20 @@ def sessione_without_presenze():
 @pytest.mark.django_db
 class TestSessioneAssembleaAdmin(object):
 
-    @mock.patch.object(SessioneAssemblea, 'create_presenze')
+    @mock.patch.object(SessioneAssemblea, 'create_presenze_of_componenti')
     @mock.patch('django.contrib.admin.ModelAdmin.change_view')
     def test_test_create_presenze_is_called_into_change_view(
             self, mock_change_view, mock_create_presenze,
             rf, sessione_admin, sessione_without_presenze):
         """
         Test that in change_view method called on SessioneAssemble object
-        without related Presenze objects, method 'create_presenze' is called.
+        without related Presenze objects, method 'create_presenze_of_componenti' is called.
         """
         sessione_admin.change_view(rf.get('/fake/'),
                                    sessione_without_presenze.pk)
         mock_create_presenze.assert_called_once_with()
 
-    @mock.patch.object(SessioneAssemblea, 'create_presenze')
+    @mock.patch.object(SessioneAssemblea, 'create_presenze_of_componenti')
     @mock.patch('django.contrib.admin.ModelAdmin.change_view')
     def test_create_presenze_is_not_call_into_change_view(
             self, mock_change_view, mock_create_presenze,
@@ -71,5 +71,8 @@ class TestSessioneAssembleaAdmin(object):
     #     # print(gc.fine_validita)
 
 
+# class TestPresenzaInline(object):
+#
+#     def test_
 
 
