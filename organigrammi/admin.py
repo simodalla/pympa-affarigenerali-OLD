@@ -161,12 +161,14 @@ class SessioneAssembleaAdmin(admin.ModelAdmin):
     list_filter = ('content_type',)
     readonly_fields = ('data_svolgimento', 'content_type', 'object_id')
 
+    def has_add_permission(self, request):
+        return False
+
+    def
+
     def change_view(self, request, object_id, *args, **kwargs):
         sessione = SessioneAssemblea.objects.get(pk=object_id)
-        # print(sessione)
-        # print(sessione.presenze.all())
         if sessione.presenze.count() == 0:
-            print(sessione.create_presenze)
             sessione.create_presenze()
         return super(SessioneAssembleaAdmin, self).change_view(
             request, object_id, *args, **kwargs)
