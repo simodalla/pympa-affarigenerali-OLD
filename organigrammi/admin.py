@@ -36,19 +36,9 @@ class ConsigliereInline(admin.TabularInline):
 class PresenzaInline(admin.TabularInline):
     model = Presenza
     extra = 1
-    #
-    # def has_delete_permission(self, request, obj=None):
-    #     """
-    #     :type obj: organigrammi.models.Presenza
-    #     """
-    #     print("#####")
-    #     # return False
-    #     # print(obj)
-    #     # print("#####")
-    #     # # if obj and obj.is_of_componente():
-    #     # #     return False
-    #     return super(PresenzaInline, self).has_delete_permission(
-    #         request, obj=obj)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Persona)
@@ -175,8 +165,8 @@ class SessioneAssembleaAdmin(admin.ModelAdmin):
     list_filter = ('content_type',)
     readonly_fields = ('data_svolgimento', 'content_type', 'object_id')
 
-    # def has_add_permission(self, request):
-    #     return False
+    def has_add_permission(self, request):
+        return False
 
     def change_view(self, request, object_id, *args, **kwargs):
         sessione = SessioneAssemblea.objects.get(pk=object_id)
@@ -184,3 +174,21 @@ class SessioneAssembleaAdmin(admin.ModelAdmin):
             sessione.create_presenze_of_componenti()
         return super(SessioneAssembleaAdmin, self).change_view(
             request, object_id, *args, **kwargs)
+
+
+@admin.register(Presenza)
+class PresenzaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'persona', 'sessione', 'presenza')
+    list_filter = ('persona', 'sessione', 'sessione__content_type', )
+    search_fields = ('persona__cognome', 'persona__cognome')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        if obj:
+            return False
+        return super(PresenzaAdmin, self).has_change_permission(request, obj)
+
+
+a = admin.SimpleListFilter
