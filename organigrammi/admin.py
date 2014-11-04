@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
+from calendar import month
 
 from django.contrib import admin
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.core.urlresolvers import reverse
@@ -176,11 +178,36 @@ class SessioneAssembleaAdmin(admin.ModelAdmin):
             request, object_id, *args, **kwargs)
 
 
+class FilterContentTypeListFilter(admin.SimpleListFilter):
+    title = 'tipo di assemblea'
+    parameter_name = 'sessione__content_type'
+
+    parent_class = ['Assemblea']
+
+    def lookups(self, request, model_admin):
+        import pyclbr
+        models_classes = pyclbr.readmodule('organigrammi.models')
+        parent_childs = [
+            c.lower() for c in models_classes
+            if set(self.parent_class).intersection(
+                set([o.name for o in models_classes[c].super
+                     if isinstance(o, pyclbr.Class)]))]
+        return tuple((ct.pk, ct.name) for ct in
+                     ContentType.objects.filter(app_label='organigrammi',
+                                                model__in=parent_childs))
+
+    def queryset(self, request, queryset):
+        if self.value():
+            queryset = queryset.filter(**{self.parameter_name: self.value()})
+        return queryset
+
+
+
 @admin.register(Presenza)
 class PresenzaAdmin(admin.ModelAdmin):
     list_display = ('id', 'persona', 'sessione', 'presenza')
-    list_filter = ('persona', 'sessione', 'sessione__content_type', )
-    search_fields = ('persona__cognome', 'persona__cognome')
+    list_filter = (FilterContentTypeListFilter, 'persona')
+    search_fields = ('persona__cognome', 'persona__nome')
 
     def has_add_permission(self, request):
         return False
@@ -190,5 +217,35 @@ class PresenzaAdmin(admin.ModelAdmin):
             return False
         return super(PresenzaAdmin, self).has_change_permission(request, obj)
 
+    def get_urls(self):
+        from django.conf.urls import patterns, url
+        from .views import RiepiloghiPresenzeView
+        import datetime
+        today = datetime.date.today()
+        first_of_year = datetime.date(year=today.year, month=1, day=1)
+        my_urls = patterns(
+            '',
+            url(r'^riepiloghi/$',
+                self.admin_site.admin_view(RiepiloghiPresenzeView.as_view()),
+                name='organigrammi_presenza_visualizzazione',
+                kwargs={'from_year': first_of_year.year,
+                        'from_month': first_of_year.month,
+                        'from_day': first_of_year.day,
+                        'to_year': today.year,
+                        'to_month': today.month,
+                        'to_day': today.day}),
+            url(r'^riepiloghi/(?P<from_year>\d{4})/(?P<from_month>\d{2})/'
+                r'(?P<from_day>\d{2})/(?P<to_year>\d{4})/(?P<to_month>\d{2})/'
+                r'(?P<to_day>\d{2})/$',
+                self.admin_site.admin_view(RiepiloghiPresenzeView.as_view()),
+                name='organigrammi_presenza_visualizzazione')
+        )
+        return my_urls + super(PresenzaAdmin, self).get_urls()
 
-a = admin.SimpleListFilter
+    class Media:
+        css = {
+            "all": ("my_styles.css",)
+        }
+        # js = {
+        #     "organigrammi_presenza_visualizzazione": ("my_code.js",)
+        # }

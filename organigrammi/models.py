@@ -48,6 +48,7 @@ class Persona(TimeStampedModel, RangeValiditaModel):
     email = models.EmailField(blank=True, null=True)
 
     class Meta:
+        ordering = ('cognome', 'nome')
         verbose_name = 'Persona'
         verbose_name_plural = 'Persone'
 

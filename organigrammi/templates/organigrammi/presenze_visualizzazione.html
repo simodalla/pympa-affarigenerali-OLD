@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls admin_static admin_list %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css">
+{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/calendar.js' %}"></script>
+    <script type="text/javascript" src="{% static 'admin/js/admin/DateTimeShortcuts.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="field-data_svolgimento">
+        <label for="id_consiglieri">Consiglieri:</label>
+        <input class="vDateField"
+               id="from_date"
+               name="to_date"
+               size="10" type="text">
+    </div>
+
+    <div style="border: 1px solid red;">
+        {{ sessioni }}
+    </div>
+
+    <div class="results">
+        <table id="result_list">
+            <thead>
+            <tr>
+            </tr>
+            </thead>
+            <tbody>
+            {% for p in presenze %}
+            <tr>
+                <td>{{ p.pk }}</td>
+                <td>{{ p }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
