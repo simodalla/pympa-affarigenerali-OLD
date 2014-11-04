@@ -13,12 +13,16 @@ from django.utils import timezone
 
 from model_utils.models import TimeStampedModel
 
+from .managers import RangeValiditaManager
+
 
 class RangeValiditaModel(models.Model):
     inizio_validita = models.DateTimeField(verbose_name='Data inizio validita',
                                            default=timezone.now)
     fine_validita = models.DateTimeField(verbose_name='Data fine validita',
                                          blank=True, null=True)
+
+    objects = RangeValiditaManager()
 
     class Meta:
         abstract = True
@@ -213,6 +217,12 @@ class Consiglio(Assemblea):
     class Meta:
         verbose_name = 'Consiglio'
         verbose_name_plural = 'Consigli'
+
+    @property
+    def pks_componenti(self):
+        ids = set([self.mandato.boss.persona.pk, self.mandato.vice.persona.pk] +
+                  list(self.consiglieri.values_list('persona_id', flat=True)))
+        return ids
 
     @property
     def ld_componenti(self):
