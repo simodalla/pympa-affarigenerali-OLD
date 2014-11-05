@@ -68,9 +68,17 @@ class MandatoAdmin(admin.ModelAdmin):
                            'vice_speacker')}),
         RANGE_VALIDITA_SECTION)
     list_display = ('ente', 'inizio_validita', 'fine_validita', 'boss', 'vice',
-                    'speacker')
+                    'speacker', 'ld_azioni')
     list_select_related = True
     inlines = [AssessoreInline, GruppoConsigliareInline, ConsigliereInline]
+
+    def ld_azioni(self, obj):
+        return '<a href="{}">Vedi riepiloghi presenze</a>'.format(
+            reverse('admin:organigrammi_presenza_visualizzazione_default',
+                    kwargs={'mandato_pk': obj.pk}))
+    ld_azioni.short_description = 'Sessioni'
+    ld_azioni.allow_tags = True
+
 
 
 @admin.register(Consigliere)
@@ -220,25 +228,11 @@ class PresenzaAdmin(admin.ModelAdmin):
     def get_urls(self):
         from django.conf.urls import patterns, url
         from .views import RiepiloghiPresenzeView
-        import datetime
-        today = datetime.date.today()
-        first_of_year = datetime.date(year=today.year, month=1, day=1)
         my_urls = patterns(
             '',
-            url(r'^riepiloghi/$',
+            url(r'^riepiloghi/(?P<mandato_pk>\d+)/$',
                 self.admin_site.admin_view(RiepiloghiPresenzeView.as_view()),
-                name='organigrammi_presenza_visualizzazione',
-                kwargs={'from_year': first_of_year.year,
-                        'from_month': first_of_year.month,
-                        'from_day': first_of_year.day,
-                        'to_year': today.year,
-                        'to_month': today.month,
-                        'to_day': today.day}),
-            url(r'^riepiloghi/(?P<from_year>\d{4})/(?P<from_month>\d{2})/'
-                r'(?P<from_day>\d{2})/(?P<to_year>\d{4})/(?P<to_month>\d{2})/'
-                r'(?P<to_day>\d{2})/$',
-                self.admin_site.admin_view(RiepiloghiPresenzeView.as_view()),
-                name='organigrammi_presenza_visualizzazione')
+                name='organigrammi_presenza_visualizzazione_default')
         )
         return my_urls + super(PresenzaAdmin, self).get_urls()
 

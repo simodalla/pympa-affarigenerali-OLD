@@ -80,6 +80,14 @@ class Mandato(TimeStampedModel, RangeValiditaModel):
         Persona, verbose_name='Vicepresidente del consiglio',
         related_name='vicespeacker_mandato', blank=True, null=True)
 
+    @property
+    def componenti(self):
+        ids = set([self.boss.pk, self.vice.pk, self.speacker,
+                   self.vice_speacker] +
+                  list(self.consiglieri.values_list('persona_id', flat=True)) +
+                  list(self.assessori.values_list('persona_id', flat=True)))
+        return Persona.objects.filter(pk__in=ids)
+
     class Meta:
         verbose_name = 'Mandato'
         verbose_name_plural = 'Mandati'
@@ -91,6 +99,11 @@ class Mandato(TimeStampedModel, RangeValiditaModel):
         return 'Mandato {} {:%Y}-{:%Y}'.format(self.ente,
                                                self.inizio_validita,
                                                fine_validita)
+
+    def has_assesore(self, persona):
+        if len(self.assessori.filter(persona__in=[persona])) >= 0:
+            return True
+        return False
 
 
 @python_2_unicode_compatible
@@ -220,8 +233,10 @@ class Consiglio(Assemblea):
 
     @property
     def pks_componenti(self):
-        ids = set([self.mandato.boss.persona.pk, self.mandato.vice.persona.pk] +
-                  list(self.consiglieri.values_list('persona_id', flat=True)))
+        ids = set([self.mandato.boss.pk, self.mandato.vice.pk,
+                   self.mandato.speacker.pk, self.mandato.vice_speacker.pk] +
+                  list(self.mandato.consiglieri.validi().values_list(
+                      'persona_id', flat=True)))
         return ids
 
     @property
@@ -255,7 +270,7 @@ class Giunta(Assemblea):
 
 
 class CommissioneConsigliare(Assemblea):
-    mandato = models.ForeignKey(Mandato)
+    mandato = models.ForeignKey(Mandato, related_name='commissioniconsigliari')
     titolo = models.CharField(max_length=500)
     boss = models.OneToOneField(
         Consigliere, verbose_name="Presidente della commissione",

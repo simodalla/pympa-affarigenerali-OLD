@@ -3,48 +3,114 @@
 
 {% block extrastyle %}
     {{ block.super }}
-    <link rel="stylesheet" type="text/css" href="/static/admin/css/forms.css">
+    <link rel="stylesheet" href="{% static 'organigrammi/jquery-ui/jquery-ui.min.css' %}">
 {% endblock %}
 
 {% block extrahead %}
-    {{ block.super }}
-    <script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
-    <script type="text/javascript" src="{% static 'admin/js/core.js' %}"></script>
-    <script type="text/javascript" src="{% static 'admin/js/jquery.js' %}"></script>
-    <script type="text/javascript" src="{% static 'admin/js/jquery.init.js' %}"></script>
-    <script type="text/javascript" src="{% static 'admin/js/calendar.js' %}"></script>
-    <script type="text/javascript" src="{% static 'admin/js/admin/DateTimeShortcuts.js' %}"></script>
+    <!--{{ block.super }}-->
+    <script type="text/javascript" src="{% static 'organigrammi/jquery-ui/external/jquery/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'organigrammi/jquery-ui/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'organigrammi/jquery-ui/i18n/jquery.ui.datepicker-it.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $(".range_date_field").datepicker({
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                changeMonth: true,
+                changeYear: true,
+                minDate: "-10Y",
+                maxDate: "+2Y",
+                dateFormat: "dd/mm/yy"
+            });
+            $("input[type=submit]").button().click(function(event) {
+//                event.preventDefault();
+//                var form_action = $('#form_filter').attr('action');
+//                console.log($("#from_date").val());
+//                console.log($("#to_date").val());
+//                if ($("#from_date").val().length == 10) {
+//                    form_action += $("#from_date").val() + "/";
+//                    if ($("#to_date").val().length == 10) {
+//                        form_action += $("#to_date").val() + "/";
+//                    }
+//                }
+//                $("#form_filter").attr("action", form_action);
+//                console.log($("#form_filter").attr("action"));
+//                $("#form_filter").submit();
+                return true;
+            });
+        });
+    </script>
 {% endblock %}
 
 {% block content %}
 <div id="content-main">
-    <div class="field-data_svolgimento">
-        <label for="id_consiglieri">Consiglieri:</label>
-        <input class="vDateField"
-               id="from_date"
-               name="to_date"
-               size="10" type="text">
+    <div  style="margin: 20px 0;">
+        <form id="form_filter" method="get" action="{% url 'admin:organigrammi_presenza_visualizzazione_default' mandato_pk %}">
+            <div class="field-data_svolgimento">
+                <label for="from_date">Dalla data:</label>
+                <input class="range_date_field"
+                       id="from_date"
+                       name="from_date"
+                       type="text"
+                        value="{{ from_date|date:'d/m/Y' }}">
+                <label for="to_date">alla data:</label>
+                <input class="range_date_field"
+                       id="to_date"
+                       name="to_date"
+                       type="text" value="{{ to_date|date:'d/m/Y' }}">
+                <input type="submit" id="filter" value="Filtra">
+            </div>
+        </form>
     </div>
-
     <div style="border: 1px solid red;">
-        {{ sessioni }}
-    </div>
+        <pre>{{ sessioni.items }}</pre>
+        <table>
+            <tr>
+        {% for s in sessioni.keys %}
+            <th>{{ s }}</th>
 
-    <div class="results">
-        <table id="result_list">
-            <thead>
-            <tr>
+        {% endfor %}
+
             </tr>
-            </thead>
-            <tbody>
-            {% for p in presenze %}
             <tr>
-                <td>{{ p.pk }}</td>
-                <td>{{ p }}</td>
+        {% for s in sessioni.keys %}
+            <th>{{ s }}</th>
+
+        {% endfor %}
+
             </tr>
-            {% endfor %}
-            </tbody>
+            <tr>
+        {% for s in sessioni.values %}
+            <th>{{ s }}</th>
+
+        {% endfor %}
+
+            </tr>
+             <tr>
+        {% for s in sessioni.items %}
+            <th>{{ s }}</th>
+
+        {% endfor %}
+
+            </tr>
         </table>
     </div>
+
+    <!--<div class="results">-->
+        <!--<table id="result_list">-->
+            <!--<thead>-->
+            <!--<tr>-->
+            <!--</tr>-->
+            <!--</thead>-->
+            <!--<tbody>-->
+            <!--{% for p in presenze %}-->
+            <!--<tr>-->
+                <!--<td>{{ p.pk }}</td>-->
+                <!--<td>{{ p }}</td>-->
+            <!--</tr>-->
+            <!--{% endfor %}-->
+            <!--</tbody>-->
+        <!--</table>-->
+    <!--</div>-->
 </div>
 {% endblock %}
