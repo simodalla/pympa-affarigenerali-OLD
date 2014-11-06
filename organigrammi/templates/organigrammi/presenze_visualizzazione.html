@@ -6,8 +6,11 @@
     <!--<link rel="stylesheet" href="{% static 'admin/css/changelists.css' %}">-->
     <link rel="stylesheet" href="{% static 'organigrammi/jquery-ui/jquery-ui.min.css' %}">
     <style>
-        div.results {
-            border: 1px solid red;
+        div.results {}
+
+        table#result_list {
+            /*margin: ;*/
+            border: 1px solid #eee;
         }
         table#result_list thead th {
             width: 100px;
@@ -71,7 +74,7 @@
                         {% if forloop.first %}
                             <th>{{ el }}</th>
                         {% else %}
-                            <td>{{ el }}</td>
+                            <td>{{ el.0 }}</td>
                         {% endif %}
                     {% endfor %}
                 <tr>

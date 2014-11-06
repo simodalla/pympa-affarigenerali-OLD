@@ -13,7 +13,8 @@ from django.utils import timezone
 
 from model_utils.models import TimeStampedModel
 
-from .managers import RangeValiditaManager, SessioneAssembleaManager
+from .managers import (RangeValiditaManager, SessioneAssembleaManager,
+                       PersonaManager, PresenzaManager)
 
 
 class RangeValiditaModel(models.Model):
@@ -50,6 +51,8 @@ class Persona(TimeStampedModel, RangeValiditaModel):
                                 blank=True, null=True)
     ente = models.ForeignKey(Ente, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
+
+    objects = PersonaManager()
 
     class Meta:
         ordering = ('cognome', 'nome')
@@ -187,8 +190,13 @@ class SessioneAssemblea(TimeStampedModel):
         unique_together = ('data_svolgimento', 'object_id', 'content_type', )
 
     def __str__(self):
-        return '{} del {:%d/%m/%Y}'.format(str(self.content_type.name),
-                                           self.data_svolgimento)
+        content_object_titolo = (
+            ' {}'.format(getattr(self.content_object, 'titolo'))
+            if hasattr(self.content_object, 'titolo') else '')
+        return '{}{} del {:%d/%m/%Y}'.format(
+            str(self.content_type.name),
+            content_object_titolo,
+            self.data_svolgimento)
 
     @property
     def assemblea(self):
@@ -209,6 +217,8 @@ class SessioneAssemblea(TimeStampedModel):
 
 class Assemblea(TimeStampedModel):
     sessioni = GenericRelation(SessioneAssemblea)
+    costo_presenza = models.PositiveSmallIntegerField(
+        verbose_name='costo della presenza o gettone', default=0)
 
     class Meta:
         abstract = True
@@ -322,6 +332,8 @@ class Presenza(TimeStampedModel):
     persona = models.ForeignKey(Persona)
     sessione = models.ForeignKey(SessioneAssemblea, related_name='presenze')
     presenza = models.BooleanField(default=False, blank=True)
+
+    objects = PresenzaManager()
 
     class Meta:
         verbose_name = 'Presenza'

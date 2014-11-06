@@ -5,7 +5,9 @@ import datetime
 
 from django.views.generic.base import TemplateView
 from django.views.generic.edit import FormView
-from .models import Presenza, SessioneAssemblea, Mandato
+
+from .exceptions import NotAPerson
+from .models import Presenza, SessioneAssemblea, Mandato, Persona
 
 
 # ####################################################
@@ -50,22 +52,12 @@ class RiepiloghiPresenzeFormView(FormView):
                 SessioneAssemblea.objects.related_content_types_ids())}
         return results
 
-    def get_simbolo(self, persona, sessione):
-        try:
-            presenza = Presenza.objects.get(persona=persona,
-                                            sessione=sessione)
-            simbolo = 'X' if presenza.presenza is True else 'A'
-        except Presenza.DoesNotExist:
-            simbolo = '-'
-        return simbolo
-
     def get_initial(self):
         initial = super(RiepiloghiPresenzeFormView, self).get_initial() or {}
         initial.update(self.get_request_data())
         return initial
 
     def get_context_data(self, *args, **kwargs):
-
         context = super(RiepiloghiPresenzeFormView, self).get_context_data(
             **kwargs)
         context['title'] = 'Riepiloghi Presenze'
@@ -76,30 +68,12 @@ class RiepiloghiPresenzeFormView(FormView):
             context['mandato_does_not_exist'] = True
             return context
         request_data = self.get_request_data()
-        sessioni = [
-            sessione for sessione in SessioneAssemblea.objects.filter(
-                data_svolgimento__range=(request_data['from_date'],
-                                         request_data['to_date']),
-                content_type__pk__in=request_data['tipi_assemblea']).order_by(
-                    'data_svolgimento')
-            if sessione.content_object.mandato.pk == mandato.pk]
-        # print("ass: ", ass)
-        # # import ipdb
-        # # ipdb.set_trace()
-        # assemblee = [mandato.consiglio, mandato.giunta] + list(
-        #     mandato.commissioniconsigliari.all())
-        # sessioni_pks = [sessione for assemblea
-        #                 in assemblee for sessione
-        #                 in assemblea.sessioni.values_list('pk', flat=True)]
-        # sessioni = SessioneAssemblea.objects.filter(
-        #     data_svolgimento__range=(request_data['from_date'],
-        #                              request_data['to_date']),
-        #     pk__in=sessioni_pks).order_by('data_svolgimento')
-
-        context['table_header'] = [''] + ['{}'.format(sessione)
-                                          for sessione in sessioni]
-        context['table_rows'] = [
-            [componente] + [self.get_simbolo(componente, sessione)
-                            for sessione in sessioni]
-            for componente in mandato.get_componenti()]
+        sessioni = SessioneAssemblea.objects.filter_for_riepilogo(
+            mandato, request_data['from_date'], request_data['to_date'],
+            content_type_ids=request_data['tipi_assemblea'])
+        context['table_header'] = ([''] + ['{}'.format(sessione)
+                                          for sessione in sessioni] +
+                                   [])
+        context['table_rows'] = Presenza.objects.get_matrix_for_riepilogo(
+            mandato, sessioni)
         return context

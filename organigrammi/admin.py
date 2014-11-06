@@ -117,8 +117,10 @@ class SessioneAssembleaInline(GenericTabularInline):
     model = SessioneAssemblea
 
 
-class SessioneAssembleaAdminMixin():
+class AssembleaAdminMixin():
     inlines = [SessioneAssembleaInline]
+    list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea',
+                    'costo_presenza')
 
     def ld_sessioni_assemblea(self, obj):
         """
@@ -144,15 +146,14 @@ class SessioneAssembleaAdminMixin():
 
 
 @admin.register(CommissioneConsigliare)
-class CommissioneConsigliareAdmin(SessioneAssembleaAdminMixin,
+class CommissioneConsigliareAdmin(AssembleaAdminMixin,
                                   admin.ModelAdmin):
     fieldsets = (
-        (None, {'fields': ('mandato', 'titolo', 'boss', 'vice',
-                           'consiglieri',)}),
+        (None, {'fields': ('mandato', 'titolo', 'costo_presenza', 'boss',
+                           'vice', 'consiglieri',)}),
     )
     filter_horizontal = ('consiglieri', )
-    list_display = ('titolo', 'mandato', 'ld_componenti',
-                    'ld_sessioni_assemblea')
+    # list_display = ['titolo'] +
     list_filter = ('mandato',)
     list_select_related = True
     search_fields = ('titolo', 'mandato__ente__titolo',)
@@ -165,15 +166,22 @@ class CommissioneConsigliareAdmin(SessioneAssembleaAdminMixin,
                               '{}__persona__nome'.format(field)]
         return tuple(set(search_fields))
 
+    def get_list_display(self, request):
+        import copy
+        return ['titolo'] + list(copy.deepcopy(
+            super(CommissioneConsigliareAdmin, self).get_list_display(
+                request)))
+
 
 @admin.register(Consiglio)
-class ConsiglioAdmin(SessioneAssembleaAdminMixin, admin.ModelAdmin):
-    list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea')
+class ConsiglioAdmin(AssembleaAdminMixin, admin.ModelAdmin):
+    pass
 
 
 @admin.register(Giunta)
-class GiuntaAdmin(SessioneAssembleaAdminMixin, admin.ModelAdmin):
-    list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea')
+class GiuntaAdmin(AssembleaAdminMixin, admin.ModelAdmin):
+    pass
+    #list_display = ('mandato', 'ld_componenti', 'ld_sessioni_assemblea')
 
 
 @admin.register(SessioneAssemblea)
