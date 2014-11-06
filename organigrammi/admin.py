@@ -30,7 +30,7 @@ class AssessoreInline(admin.TabularInline):
 
 
 class ConsigliereInline(admin.TabularInline):
-    fields = ('persona', 'gruppoconsigliare', 'capogruppo')
+    fields = ('persona', 'voti', 'gruppoconsigliare', 'capogruppo')
     model = Consigliere
     extra = 1
 
@@ -84,13 +84,22 @@ class MandatoAdmin(admin.ModelAdmin):
 @admin.register(Consigliere)
 class ConsigliereAdmin(admin.ModelAdmin):
     fieldsets = (
-        (None, {'fields': ('persona', 'mandato', 'gruppoconsigliare',
+        (None, {'fields': ('persona', 'mandato', 'voti', 'gruppoconsigliare',
                            'capogruppo',)}),
         RANGE_VALIDITA_SECTION)
     list_filter = ('gruppoconsigliare',)
-    list_display = ('persona', 'mandato', 'gruppoconsigliare',
+    list_display = ('persona', 'mandato', 'voti', 'ld_gruppoconsigliare',
                     'capogruppo', 'inizio_validita', 'fine_validita')
     search_fields = ('persona__cognome', 'persona__nome',)
+
+    def save_model(self, request, obj, form, change):
+        obj.save_and_update_voti()
+
+    def ld_gruppoconsigliare(self, obj):
+        return '{} [voti: {}]'.format(obj.gruppoconsigliare.titolo,
+                                      obj.gruppoconsigliare.voti)
+    ld_gruppoconsigliare.short_description = 'Gruppo Consigliare'
+    ld_gruppoconsigliare.allow_tags = True
 
 
 @admin.register(Assessore)
@@ -227,11 +236,12 @@ class PresenzaAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         from django.conf.urls import patterns, url
-        from .views import RiepiloghiPresenzeView
+        from .views import RiepiloghiPresenzeFormView
         my_urls = patterns(
             '',
             url(r'^riepiloghi/(?P<mandato_pk>\d+)/$',
-                self.admin_site.admin_view(RiepiloghiPresenzeView.as_view()),
+                self.admin_site.admin_view(
+                    RiepiloghiPresenzeFormView.as_view()),
                 name='organigrammi_presenza_visualizzazione_default')
         )
         return my_urls + super(PresenzaAdmin, self).get_urls()

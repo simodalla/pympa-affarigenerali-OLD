@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from model_utils.models import TimeStampedModel
 
-from .managers import RangeValiditaManager
+from .managers import RangeValiditaManager, SessioneAssembleaManager
 
 
 class RangeValiditaModel(models.Model):
@@ -80,14 +80,14 @@ class Mandato(TimeStampedModel, RangeValiditaModel):
         Persona, verbose_name='Vicepresidente del consiglio',
         related_name='vicespeacker_mandato', blank=True, null=True)
 
-    @property
-    def componenti(self):
-        ids = set([self.boss, self.speacker] + [])
-        print(self.consiglieri.order_by('gruppoconsigliare__titolo'))
-                  # list(self.consiglieri.values_list('persona_id', flat=True)) +
-                  # list(self.assessori.values_list('persona_id', flat=True)))
-        return ids
-        #return Persona.objects.filter(pk__in=ids)
+    def get_componenti(self, with_consiglieri=True, with_assessori=True):
+        componenti = [self.boss, self.speacker]
+        if with_consiglieri:
+            componenti += list(self.consiglieri.validi().order_by(
+                '-gruppoconsigliare__voti', '-voti'))
+        if with_assessori:
+            componenti += list(self.assessori.validi().all())
+        return componenti
 
     class Meta:
         verbose_name = 'Mandato'
@@ -178,6 +178,8 @@ class SessioneAssemblea(TimeStampedModel):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
 
+    objects = SessioneAssembleaManager()
+
     class Meta:
         ordering = ('data_svolgimento',)
         verbose_name = 'Sessione Assemblea'
@@ -185,7 +187,6 @@ class SessioneAssemblea(TimeStampedModel):
         unique_together = ('data_svolgimento', 'object_id', 'content_type', )
 
     def __str__(self):
-        print(self.content_object)
         return '{} del {:%d/%m/%Y}'.format(str(self.content_type.name),
                                            self.data_svolgimento)
 
@@ -249,9 +250,10 @@ class Consiglio(Assemblea):
 
     @property
     def pks_componenti(self):
-        ids = set([self.mandato.boss.pk, self.mandato.vice.pk,
-                   self.mandato.speacker.pk, self.mandato.vice_speacker.pk] +
+        ids = set([self.mandato.boss.pk, self.mandato.speacker.pk] +
                   list(self.mandato.consiglieri.validi().values_list(
+                      'persona_id', flat=True)) +
+                  list(self.mandato.assessori.validi().values_list(
                       'persona_id', flat=True)))
         return ids
 

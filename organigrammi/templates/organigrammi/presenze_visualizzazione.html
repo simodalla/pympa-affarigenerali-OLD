@@ -3,7 +3,25 @@
 
 {% block extrastyle %}
     {{ block.super }}
+    <!--<link rel="stylesheet" href="{% static 'admin/css/changelists.css' %}">-->
     <link rel="stylesheet" href="{% static 'organigrammi/jquery-ui/jquery-ui.min.css' %}">
+    <style>
+        div.results {
+            border: 1px solid red;
+        }
+        table#result_list thead th {
+            width: 100px;
+            text-align: center;
+        }
+        table#result_list tbody td {
+            width: 100px;
+            text-align: center;
+        }
+        table#result_list tbody th {
+            width: 150px;
+            text-align: right;
+        }
+    </style>
 {% endblock %}
 
 {% block extrahead %}
@@ -22,95 +40,44 @@
                 maxDate: "+2Y",
                 dateFormat: "dd/mm/yy"
             });
-            $("input[type=submit]").button().click(function(event) {
-//                event.preventDefault();
-//                var form_action = $('#form_filter').attr('action');
-//                console.log($("#from_date").val());
-//                console.log($("#to_date").val());
-//                if ($("#from_date").val().length == 10) {
-//                    form_action += $("#from_date").val() + "/";
-//                    if ($("#to_date").val().length == 10) {
-//                        form_action += $("#to_date").val() + "/";
-//                    }
-//                }
-//                $("#form_filter").attr("action", form_action);
-//                console.log($("#form_filter").attr("action"));
-//                $("#form_filter").submit();
-                return true;
-            });
+            $("input[type=submit]").button();
         });
     </script>
 {% endblock %}
 
 {% block content %}
 <div id="content-main">
-    <div  style="margin: 20px 0;">
-        <form id="form_filter" method="get" action="{% url 'admin:organigrammi_presenza_visualizzazione_default' mandato_pk %}">
+    <div style="margin: 20px 0;">
+        <form id="form_filter_2" method="get" action="">
             <div class="field-data_svolgimento">
-                <label for="from_date">Dalla data:</label>
-                <input class="range_date_field"
-                       id="from_date"
-                       name="from_date"
-                       type="text"
-                        value="{{ from_date|date:'d/m/Y' }}">
-                <label for="to_date">alla data:</label>
-                <input class="range_date_field"
-                       id="to_date"
-                       name="to_date"
-                       type="text" value="{{ to_date|date:'d/m/Y' }}">
+                {{ form }}
                 <input type="submit" id="filter" value="Filtra">
             </div>
         </form>
     </div>
-    <div style="border: 1px solid red;">
-        <pre>{{ sessioni.items }}</pre>
-        <table>
-            <tr>
-        {% for s in sessioni.keys %}
-            <th>{{ s }}</th>
-
-        {% endfor %}
-
-            </tr>
-            <tr>
-        {% for s in sessioni.keys %}
-            <th>{{ s }}</th>
-
-        {% endfor %}
-
-            </tr>
-            <tr>
-        {% for s in sessioni.values %}
-            <th>{{ s }}</th>
-
-        {% endfor %}
-
-            </tr>
-             <tr>
-        {% for s in sessioni.items %}
-            <th>{{ s }}</th>
-
-        {% endfor %}
-
-            </tr>
+    <div class="results">
+        <table id="result_list">
+            <thead>
+                <tr>
+                    {% for h in table_header %}
+                        <th>{{ h }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in table_rows %}
+                <tr>
+                    {% for el in row %}
+                        {% if forloop.first %}
+                            <th>{{ el }}</th>
+                        {% else %}
+                            <td>{{ el }}</td>
+                        {% endif %}
+                    {% endfor %}
+                <tr>
+            {% endfor %}
+            </tbody>
         </table>
     </div>
-
-    <!--<div class="results">-->
-        <!--<table id="result_list">-->
-            <!--<thead>-->
-            <!--<tr>-->
-            <!--</tr>-->
-            <!--</thead>-->
-            <!--<tbody>-->
-            <!--{% for p in presenze %}-->
-            <!--<tr>-->
-                <!--<td>{{ p.pk }}</td>-->
-                <!--<td>{{ p }}</td>-->
-            <!--</tr>-->
-            <!--{% endfor %}-->
-            <!--</tbody>-->
-        <!--</table>-->
-    <!--</div>-->
 </div>
 {% endblock %}
