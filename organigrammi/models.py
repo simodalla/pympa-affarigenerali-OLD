@@ -82,11 +82,12 @@ class Mandato(TimeStampedModel, RangeValiditaModel):
 
     @property
     def componenti(self):
-        ids = set([self.boss.pk, self.vice.pk, self.speacker,
-                   self.vice_speacker] +
-                  list(self.consiglieri.values_list('persona_id', flat=True)) +
-                  list(self.assessori.values_list('persona_id', flat=True)))
-        return Persona.objects.filter(pk__in=ids)
+        ids = set([self.boss, self.speacker] + [])
+        print(self.consiglieri.order_by('gruppoconsigliare__titolo'))
+                  # list(self.consiglieri.values_list('persona_id', flat=True)) +
+                  # list(self.assessori.values_list('persona_id', flat=True)))
+        return ids
+        #return Persona.objects.filter(pk__in=ids)
 
     class Meta:
         verbose_name = 'Mandato'
@@ -110,6 +111,8 @@ class Mandato(TimeStampedModel, RangeValiditaModel):
 class GruppoConsigliare(TimeStampedModel, RangeValiditaModel):
     mandato = models.ForeignKey(Mandato)
     titolo = models.CharField(max_length=200)
+    voti = models.PositiveIntegerField(verbose_name='Numero voti', default=0,
+                                       editable=False)
 
     def __str__(self):
         return '[{}] {}'.format(self.mandato.ente, self.titolo)
@@ -117,6 +120,11 @@ class GruppoConsigliare(TimeStampedModel, RangeValiditaModel):
     class Meta:
         verbose_name = 'Gruppo Consigliare'
         verbose_name_plural = 'Gruppo Consigliari'
+
+    def update_voti(self):
+        self.voti = self.consiglieri.all().aggregate(
+            models.Sum('voti'))['voti__sum']
+        self.save()
 
 
 @python_2_unicode_compatible
@@ -142,8 +150,10 @@ class Consigliere(TimeStampedModel, RangeValiditaModel):
     mandato = models.ForeignKey(Mandato, related_name='consiglieri')
     persona = models.ForeignKey(Persona)
     gruppoconsigliare = models.ForeignKey(GruppoConsigliare,
-                                          blank=True, null=True)
+                                          blank=True, null=True,
+                                          related_name='consiglieri')
     capogruppo = models.BooleanField(default=False)
+    voti = models.PositiveIntegerField(verbose_name='Numero voti', default=0)
 
     class Meta:
         verbose_name = 'Consigliere'
@@ -155,6 +165,11 @@ class Consigliere(TimeStampedModel, RangeValiditaModel):
     def get_absolute_url(self):
         return '{}?id={}'.format(
             reverse(admin_urlname(self._meta, 'changelist')), self.pk,)
+
+    def save_and_update_voti(self):
+        self.save()
+        if self.gruppoconsigliare:
+            self.gruppoconsigliare.update_voti()
 
 
 class SessioneAssemblea(TimeStampedModel):
@@ -170,6 +185,7 @@ class SessioneAssemblea(TimeStampedModel):
         unique_together = ('data_svolgimento', 'object_id', 'content_type', )
 
     def __str__(self):
+        print(self.content_object)
         return '{} del {:%d/%m/%Y}'.format(str(self.content_type.name),
                                            self.data_svolgimento)
 
