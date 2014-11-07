@@ -31,7 +31,7 @@ class SessioneAssembleaManager(Manager):
         result = self.model.objects.filter(
             data_svolgimento__range=(from_date, to_date))
         if content_type_ids:
-            result.filter(content_type__pk__in=content_type_ids)
+            result = result.filter(content_type__pk__in=content_type_ids)
         return [sessione for sessione in result.order_by('data_svolgimento')
                 if sessione.content_object.mandato.pk == mandato.pk]
 
@@ -47,51 +47,45 @@ class PersonaManager(RangeValiditaManager):
 
 
 PRESENZA_SIMBOLI = {
-    'presenza': 'X',
+    'presenza': 'P',
     'assenza': 'A',
-    'non_previsto': 'A',
+    'non_previsto': '-',
     'not_a_number': 'NaP'}
 
 
 class PresenzaManager(Manager):
 
-    def get_simbolo(self, persona, sessione):
+    def get_data_for_riepilogo(self, componente, sessione):
         from .models import Persona
         try:
+            persona = Persona.objects.get_persona_obj(componente)
             presenza = self.model.objects.get(
-                persona=Persona.objects.get_persona_obj(persona),
-                sessione=sessione)
-            simbolo = (PRESENZA_SIMBOLI['presenza']
-                       if presenza.presenza is True
-                       else PRESENZA_SIMBOLI['assenza'])
+                persona=persona, sessione=sessione)
+            data = (PRESENZA_SIMBOLI['presenza']
+                    if presenza.presenza is True
+                    else PRESENZA_SIMBOLI['assenza'],
+                    sessione.get_costo_presenza(persona))
         except self.model.DoesNotExist:
-            simbolo = PRESENZA_SIMBOLI['non_previsto']
+            data = (PRESENZA_SIMBOLI['non_previsto'], 0)
         except NotAPerson:
-            simbolo = PRESENZA_SIMBOLI['not_a_number']
-        return simbolo
+            data = (PRESENZA_SIMBOLI['not_a_number'], 0)
+        return data
 
-    def get_matrix_for_riepilogo(self, mandato, sessioni):
+    def get_matrix_for_riepilogo(self, mandato, sessioni, with_assessori=True):
         matrix = [
-            [componente] + [(self.model.objects.get_simbolo(componente,
-                                                            sessione),
-                             sessione.content_object.costo_presenza)
-                            for sessione in sessioni]
-            for componente in mandato.get_componenti()]
-        a = lambda x: x[0]
-        print("---->", a(tuple([1, 2])))
+            [(componente, componente._meta.model_name)] +
+            [self.model.objects.get_data_for_riepilogo(componente, sessione)
+             for sessione in sessioni]
+            for componente in mandato.get_componenti(
+                with_assessori=with_assessori)]
         for ix, row in enumerate(matrix):
             f_row = list(filter(
                 lambda x: x[0] == PRESENZA_SIMBOLI['presenza'], row[1:]))
-            matrix[ix].append((len(f_row), sum([c for s, c in f_row])))
-            # print)
-            # print([c for s, c in filter(lambda x: x[0] == PRESENZA_SIMBOLI['presenza'], row[1:])])
-
-            # print(sum([c for s, c in list(]))
-            # print(list(filter(lambda x: x[0] == PRESENZA_SIMBOLI['presenza'], row)))
-            # costo_presenze
-            # n_presenze = [for row[1:]]
-            # print(ix, row)
-            # print(row[1:], row[1:].count(PRESENZA_SIMBOLI['presenza']))
-        print(matrix)
+            f_row_2 = list(filter(
+                lambda x: x[0] == PRESENZA_SIMBOLI['presenza'] and x[1] > 0,
+                row[1:]))
+            print(f_row)
+            print(f_row_2, "\n***")
+            matrix[ix] += [len(f_row), len(f_row_2), sum([c for s, c in f_row])]
         return matrix
 

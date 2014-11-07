@@ -17,9 +17,11 @@ from django import forms
 class RangeDateForm(forms.Form):
     # your_name = forms.CharField(label='Your name', max_length=100)
     from_date = forms.DateField(label='Dalla data:', required=False)
-    to_date = forms.DateField(label='alla data:', required=False)
-    tipi_assemblea = forms.ChoiceField(label='tipi assembla', required=False,
+    to_date = forms.DateField(label='Alla data:', required=False)
+    tipi_assemblea = forms.ChoiceField(label='Tipi assembla', required=False,
                                        widget=forms.CheckboxSelectMultiple)
+    assessori = forms.BooleanField(label='Mostra assessori', required=False,
+                                   initial=True)
 
     def __init__(self, *args, **kwargs):
         super(RangeDateForm, self).__init__(*args, **kwargs)
@@ -49,7 +51,10 @@ class RiepiloghiPresenzeFormView(FormView):
                 date_format),
             'tipi_assemblea': (
                 self.request.GET.getlist('tipi_assemblea') or
-                SessioneAssemblea.objects.related_content_types_ids())}
+                SessioneAssemblea.objects.related_content_types_ids()),
+            'assessori': (
+                False if not self.request.GET.get('assessori', None) else True)
+        }
         return results
 
     def get_initial(self):
@@ -71,9 +76,9 @@ class RiepiloghiPresenzeFormView(FormView):
         sessioni = SessioneAssemblea.objects.filter_for_riepilogo(
             mandato, request_data['from_date'], request_data['to_date'],
             content_type_ids=request_data['tipi_assemblea'])
-        context['table_header'] = ([''] + ['{}'.format(sessione)
-                                          for sessione in sessioni] +
-                                   [])
+        context['table_header'] = (
+            [''] + ['{}'.format(sessione) for sessione in sessioni] +
+            ['Totale Presenze', 'Totale Gettoni', 'Costo Totale Gettoni (&#8364;)'])
         context['table_rows'] = Presenza.objects.get_matrix_for_riepilogo(
-            mandato, sessioni)
+            mandato, sessioni, with_assessori=request_data['assessori'])
         return context

@@ -198,6 +198,12 @@ class SessioneAssemblea(TimeStampedModel):
             content_object_titolo,
             self.data_svolgimento)
 
+    def get_costo_presenza(self, componente):
+        try:
+            return self.content_object.get_costo_presenza(componente)
+        except NotImplementedError:
+            return 0
+
     @property
     def assemblea(self):
         return self.content_type.get_object_for_this_type(pk=self.object_id)
@@ -250,6 +256,9 @@ class Assemblea(TimeStampedModel):
         """
         return True if persona.pk in self.pks_componenti else False
 
+    def get_costo_presenza(self, persona):
+        raise NotImplementedError()
+
 
 class Consiglio(Assemblea):
     mandato = models.OneToOneField(Mandato)
@@ -278,6 +287,14 @@ class Consiglio(Assemblea):
             + [(c.get_absolute_url(), '{} (Consigliere)'.format(c.persona))
                for c in self.mandato.consiglieri.all()]
         )
+
+    def get_costo_presenza(self, persona):
+        if (persona.pk == self.mandato.boss.pk or
+                persona.pk == self.mandato.speacker.pk or
+                len(self.mandato.assessori.filter(
+                    persona__pk=persona.pk)) == 1):
+            return 0
+        return self.costo_presenza
 
 
 class Giunta(Assemblea):
@@ -326,6 +343,11 @@ class CommissioneConsigliare(Assemblea):
         ids = set([self.boss.persona.pk, self.vice.persona.pk] +
                   list(self.consiglieri.values_list('persona_id', flat=True)))
         return ids
+
+    def get_costo_presenza(self, persona):
+        if len(self.consiglieri.filter(persona__pk=persona.pk)) == 1:
+            return self.costo_presenza
+        return 0
 
 
 class Presenza(TimeStampedModel):

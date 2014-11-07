@@ -9,20 +9,29 @@
         div.results {}
 
         table#result_list {
-            /*margin: ;*/
             border: 1px solid #eee;
         }
         table#result_list thead th {
             width: 100px;
             text-align: center;
+            vertical-align: bottom;
+            padding-bottom: 3px;
         }
-        table#result_list tbody td {
-            width: 100px;
-            text-align: center;
+        table#result_list thead th.presenze {
+            width: 50px;
         }
         table#result_list tbody th {
             width: 150px;
             text-align: right;
+        }
+        table#result_list tbody td {
+            width: 100px;
+            text-align: center;
+            border: 1px solid #eee;
+            /*color: lig;*/
+        }
+        table#result_list tbody td.presenze {
+            width: 50px;
         }
     </style>
 {% endblock %}
@@ -44,16 +53,39 @@
                 dateFormat: "dd/mm/yy"
             });
             $("input[type=submit]").button();
+            $("td.totale_num_gettoni").css("background-color", "lightgoldenrodyellow");
+            $("td.totale_costo_gettoni").css("background-color", "lightyellow");
+            $("th.persona").parent().css("background-color", "lightpink");
+            $("th.assessore").parent().css("background-color", "lightblue");
+            var globale_num_gettoni = 0;
+            var globale_costo_gettoni = 0;
+            $.each($("td.totale_num_gettoni"), function (index, element) {
+                globale_num_gettoni += parseInt($.trim($(element).html()));
+            });
+
+            $.each($("td.totale_costo_gettoni"), function (index, element) {
+                globale_costo_gettoni += parseInt($.trim($(element).html()));
+            });
+            console.log(globale_num_gettoni);
+            console.log(globale_costo_gettoni);
+
+
+//            $("#result_list tbody tr:last > td").css("margin", "3px solid blue;");
+//            var tr_content = "<th></th>";
+//            for (var i=1; i <= ($("#result_list tr:last > td").length - 2); i++) {
+//                tr_content += '<td></td>'
+//            }
+//            $("#result_list tbody").append("<tr id=""></tr>")
         });
     </script>
 {% endblock %}
 
 {% block content %}
 <div id="content-main">
-    <div style="margin: 20px 0;">
+    <div style="margin: 20px 0; width: 280px; float: left;">
         <form id="form_filter_2" method="get" action="">
             <div class="field-data_svolgimento">
-                {{ form }}
+                {{ form.as_p }}
                 <input type="submit" id="filter" value="Filtra">
             </div>
         </form>
@@ -63,7 +95,7 @@
             <thead>
                 <tr>
                     {% for h in table_header %}
-                        <th>{{ h }}</th>
+                        <th{% if forloop.revcounter <= 3 %} class="presenze"{% endif %}>{{ h|safe }}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -72,12 +104,14 @@
                 <tr>
                     {% for el in row %}
                         {% if forloop.first %}
-                            <th>{{ el }}</th>
+                            <th class="{{ el.1 }}">{{ el.0 }}</th>
+                        {% elif forloop.revcounter <= 3 %}
+                            <td class="presenze {% if forloop.revcounter == 1 %}totale_costo_gettoni{% elif forloop.revcounter == 2 %}totale_num_gettoni{% elif forloop.revcounter == 3 %}totale_num_presenze{% endif %}">{{ el }}</td>
                         {% else %}
-                            <td>{{ el.0 }}</td>
+                            <td>{{ el.0 }}{% if el.0 == 'P' and el.1 > 0 %} ({{el.1}}&#8364;){% endif %}</td>
                         {% endif %}
                     {% endfor %}
-                <tr>
+                </tr>
             {% endfor %}
             </tbody>
         </table>
