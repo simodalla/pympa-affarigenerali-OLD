@@ -3,11 +3,11 @@ from __future__ import unicode_literals, absolute_import
 from calendar import month
 
 from django.contrib import admin
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.contrib.admin.templatetags.admin_urls import admin_urlname
 from django.core.urlresolvers import reverse
 
+from .filters import FilterContentTypeListFilter
 from .models import (Ente, Mandato, Persona, GruppoConsigliare, Assessore,
                      Consigliere, SessioneAssemblea, CommissioneConsigliare,
                      Consiglio, Giunta, Presenza)
@@ -189,7 +189,7 @@ class SessioneAssembleaAdmin(admin.ModelAdmin):
     date_hierarchy = 'data_svolgimento'
     inlines = [PresenzaInline]
     list_display = ('data_svolgimento', 'content_type')
-    list_filter = ('content_type',)
+    list_filter = (FilterContentTypeListFilter,)
     readonly_fields = ('data_svolgimento', 'content_type', 'object_id')
 
     def has_add_permission(self, request):
@@ -203,35 +203,10 @@ class SessioneAssembleaAdmin(admin.ModelAdmin):
             request, object_id, *args, **kwargs)
 
 
-class FilterContentTypeListFilter(admin.SimpleListFilter):
-    title = 'tipo di assemblea'
-    parameter_name = 'sessione__content_type'
-
-    parent_class = ['Assemblea']
-
-    def lookups(self, request, model_admin):
-        import pyclbr
-        models_classes = pyclbr.readmodule('organigrammi.models')
-        parent_childs = [
-            c.lower() for c in models_classes
-            if set(self.parent_class).intersection(
-                set([o.name for o in models_classes[c].super
-                     if isinstance(o, pyclbr.Class)]))]
-        return tuple((ct.pk, ct.name) for ct in
-                     ContentType.objects.filter(app_label='organigrammi',
-                                                model__in=parent_childs))
-
-    def queryset(self, request, queryset):
-        if self.value():
-            queryset = queryset.filter(**{self.parameter_name: self.value()})
-        return queryset
-
-
-
 @admin.register(Presenza)
 class PresenzaAdmin(admin.ModelAdmin):
     list_display = ('id', 'persona', 'sessione', 'presenza')
-    list_filter = (FilterContentTypeListFilter, 'persona')
+    list_filter = (FilterContentTypeListFilter, 'presenza', 'persona',)
     search_fields = ('persona__cognome', 'persona__nome')
 
     def has_add_permission(self, request):
@@ -253,11 +228,3 @@ class PresenzaAdmin(admin.ModelAdmin):
                 name='organigrammi_presenza_visualizzazione_default')
         )
         return my_urls + super(PresenzaAdmin, self).get_urls()
-
-    class Media:
-        css = {
-            "all": ("my_styles.css",)
-        }
-        # js = {
-        #     "organigrammi_presenza_visualizzazione": ("my_code.js",)
-        # }
