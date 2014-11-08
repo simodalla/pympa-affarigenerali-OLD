@@ -79,13 +79,14 @@ class PresenzaManager(Manager):
             for componente in mandato.get_componenti(
                 with_assessori=with_assessori)]
         for ix, row in enumerate(matrix):
-            f_row = list(filter(
+            presenze = list(filter(
                 lambda x: x[0] == PRESENZA_SIMBOLI['presenza'], row[1:]))
-            f_row_2 = list(filter(
+            gettoni = list(filter(
                 lambda x: x[0] == PRESENZA_SIMBOLI['presenza'] and x[1] > 0,
                 row[1:]))
-            # print(f_row)
-            # print(f_row_2, "\n***")
-            matrix[ix] += [len(f_row), len(f_row_2), sum([c for s, c in f_row])]
+            matrix[ix] += [len(presenze),
+                           len(gettoni),
+                           sum([c for s, c in presenze])]
+        matrix.append([sum(x) for x in list(zip(*matrix))[-3:]])
         return matrix
 

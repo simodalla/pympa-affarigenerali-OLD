@@ -79,6 +79,11 @@ class MandatoAdmin(admin.ModelAdmin):
     ld_azioni.short_description = 'Sessioni'
     ld_azioni.allow_tags = True
 
+    def ld_inizio_validita(self, obj):
+        return obj.inizio_validita
+    ld_inizio_validita.short_description = 'Sessioni'
+    ld_inizio_validita.allow_tags = True
+
 
 
 @admin.register(Consigliere)

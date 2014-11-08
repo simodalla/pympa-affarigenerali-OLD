@@ -28,6 +28,13 @@ class RangeValiditaModel(models.Model):
     class Meta:
         abstract = True
 
+    def is_valido(self):
+        from django.utils.timezone import now
+        if self.inizio_validita <= now() and (
+                not self.fine_validita or self.fine_validita >= now()):
+            return True
+        return False
+
 
 @python_2_unicode_compatible
 class Ente(TimeStampedModel, RangeValiditaModel):

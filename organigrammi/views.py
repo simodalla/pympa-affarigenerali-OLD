@@ -3,38 +3,15 @@ from __future__ import unicode_literals, absolute_import
 
 import datetime
 
-from django.views.generic.base import TemplateView
 from django.views.generic.edit import FormView
 
-from .exceptions import NotAPerson
-from .models import Presenza, SessioneAssemblea, Mandato, Persona
-
-
-# ####################################################
-from django import forms
-
-
-class RangeDateForm(forms.Form):
-    # your_name = forms.CharField(label='Your name', max_length=100)
-    from_date = forms.DateField(label='Dalla data:', required=False)
-    to_date = forms.DateField(label='Alla data:', required=False)
-    tipi_assemblea = forms.ChoiceField(label='Tipi assembla', required=False,
-                                       widget=forms.CheckboxSelectMultiple)
-    assessori = forms.BooleanField(label='Mostra assessori', required=False,
-                                   initial=True)
-
-    def __init__(self, *args, **kwargs):
-        super(RangeDateForm, self).__init__(*args, **kwargs)
-        for field in ['from_date', 'to_date']:
-            # self.fields[field].required = True
-            self.fields[field].widget.attrs['class'] = 'range_date_field'
-        self.fields['tipi_assemblea'].choices = (
-            SessioneAssemblea.objects.related_content_types())
+from .models import Presenza, SessioneAssemblea, Mandato
+from .forms import FilterRiepiloghiPresenze
 
 
 class RiepiloghiPresenzeFormView(FormView):
     template_name = "organigrammi/presenze_visualizzazione.html"
-    form_class = RangeDateForm
+    form_class = FilterRiepiloghiPresenze
 
     def get_request_data(self):
         today = datetime.date.today()
@@ -77,10 +54,11 @@ class RiepiloghiPresenzeFormView(FormView):
             mandato, request_data['from_date'], request_data['to_date'],
             content_type_ids=request_data['tipi_assemblea'])
         context['table_header'] = (
-            [''] + ['{}'.format(sessione) for sessione in sessioni] +
-            ['Totale Presenze', 'Totale Gettoni', 'Costo Totale Gettoni (&#8364;)'])
+            [''] +
+            ['{}'.format(sessione) for sessione in sessioni] +
+            ['Totale Presenze',
+             'Totale Gettoni',
+             'Costo Totale Gettoni (&#8364;)'])
         context['table_rows'] = Presenza.objects.get_matrix_for_riepilogo(
             mandato, sessioni, with_assessori=request_data['assessori'])
-        context['table_rows'].append(
-            [sum(x) for x in list(zip(*context['table_rows']))[-3:]])
         return context
