@@ -1,0 +1,42 @@
+div#div_form_filter {
+    margin: 20px 0;
+    width: 280px;
+    float: left;
+}
+
+div.results {}
+
+table#result_list {
+    border: 1px solid #eee;
+}
+table#result_list thead th {
+    width: 100px;
+    text-align: center;
+    vertical-align: bottom;
+    padding-bottom: 3px;
+}
+table#result_list thead th.presenze {
+    width: 50px;
+}
+table#result_list tbody th {
+    width: 150px;
+    text-align: right;
+}
+table#result_list tbody td {
+    width: 100px;
+    text-align: center;
+    border: 1px solid #eee;
+    /*color: lig;*/
+}
+table#result_list tbody td.presenze {
+    width: 50px;
+}
+td.totale_num_presenze {
+    background-color: lightyellow;
+}
+td.totale_num_gettoni {
+    background-color: lightgoldenrodyellow;
+}
+td.totale_costo_gettoni {
+    background-color: lemonchiffon;
+}

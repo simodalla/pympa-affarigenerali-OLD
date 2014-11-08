@@ -10,7 +10,7 @@ from .forms import FilterRiepiloghiPresenze
 
 
 class RiepiloghiPresenzeFormView(FormView):
-    template_name = "organigrammi/presenze_visualizzazione.html"
+    template_name = "organigrammi/riepilogo_presenze.html"
     form_class = FilterRiepiloghiPresenze
 
     def get_request_data(self):

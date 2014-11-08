@@ -1,0 +1,58 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls admin_static admin_list %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'organigrammi/jquery-ui/jquery-ui.min.css' %}">
+    <link rel="stylesheet" href="{% static 'organigrammi/css/riepilogo_presenze.css' %}">
+    <link rel="stylesheet" media="print" href="{% static 'organigrammi/css/print_riepilogo_presenze.css' %}">
+{% endblock %}
+
+{% block extrahead %}
+    <script type="text/javascript" src="{% static 'organigrammi/jquery-ui/external/jquery/jquery.js' %}"></script>
+    <script type="text/javascript" src="{% static 'organigrammi/jquery-ui/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'organigrammi/jquery-ui/i18n/jquery.ui.datepicker-it.js' %}"></script>
+    <script type="text/javascript" src="{% static 'organigrammi/js/riepilogo_presenze.js' %}"></script>
+    <script>
+
+    </script>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div id="div_form_filter">
+        <form id="form_filter" method="get" action="">
+            <div class="field-data_svolgimento">
+                {{ form.as_p }}
+                <input type="submit" id="filter" value="Filtra">
+            </div>
+        </form>
+    </div>
+    <div class="results">
+        <table id="result_list">
+            <thead>
+                <tr>
+                    {% for h in table_header %}
+                        <th{% if forloop.revcounter <= 3 %} class="presenze"{% endif %}>{{ h|safe }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in table_rows %}
+                <tr>
+                    {% for el in row %}
+                        {% if forloop.revcounter <= 3 %}
+                            <td class="presenze {% if forloop.revcounter == 1 %}totale_costo_gettoni{% elif forloop.revcounter == 2 %}totale_num_gettoni{% elif forloop.revcounter == 3 %}totale_num_presenze{% endif %}">{{ el }}</td>
+                        {% elif forloop.first %}
+                            <th class="{{ el.1 }}">{{ el.0 }}</th>
+                        {% else %}
+                            <td>{{ el.0 }}{% if el.0 == 'P' and el.1 > 0 %} ({{el.1}}&#8364;){% endif %}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
