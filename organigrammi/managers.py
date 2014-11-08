@@ -84,8 +84,8 @@ class PresenzaManager(Manager):
             f_row_2 = list(filter(
                 lambda x: x[0] == PRESENZA_SIMBOLI['presenza'] and x[1] > 0,
                 row[1:]))
-            print(f_row)
-            print(f_row_2, "\n***")
+            # print(f_row)
+            # print(f_row_2, "\n***")
             matrix[ix] += [len(f_row), len(f_row_2), sum([c for s, c in f_row])]
         return matrix
 

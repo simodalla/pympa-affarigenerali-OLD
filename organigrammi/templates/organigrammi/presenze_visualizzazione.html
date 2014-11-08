@@ -6,6 +6,12 @@
     <!--<link rel="stylesheet" href="{% static 'admin/css/changelists.css' %}">-->
     <link rel="stylesheet" href="{% static 'organigrammi/jquery-ui/jquery-ui.min.css' %}">
     <style>
+        div#div_form_filter {
+            margin: 20px 0;
+            width: 280px;
+            float: left;
+        }
+
         div.results {}
 
         table#result_list {
@@ -33,6 +39,30 @@
         table#result_list tbody td.presenze {
             width: 50px;
         }
+        td.totale_num_presenze {
+            background-color: lightyellow;
+        }
+        td.totale_num_gettoni {
+            background-color: lightgoldenrodyellow;
+        }
+        td.totale_costo_gettoni {
+            background-color: lemonchiffon;
+        }
+
+    </style>
+    <style type="text/css" media="print">
+        @page {
+            size: landscape;
+        }
+        div#header, div.breadcrumbs, div#div_form_filter {
+            display: none;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            margin: 10px auto;
+        }
     </style>
 {% endblock %}
 
@@ -53,37 +83,20 @@
                 dateFormat: "dd/mm/yy"
             });
             $("input[type=submit]").button();
-            $("td.totale_num_gettoni").css("background-color", "lightgoldenrodyellow");
-            $("td.totale_costo_gettoni").css("background-color", "lightyellow");
             $("th.persona").parent().css("background-color", "lightpink");
             $("th.assessore").parent().css("background-color", "lightblue");
-            var globale_num_gettoni = 0;
-            var globale_costo_gettoni = 0;
-            $.each($("td.totale_num_gettoni"), function (index, element) {
-                globale_num_gettoni += parseInt($.trim($(element).html()));
-            });
-
-            $.each($("td.totale_costo_gettoni"), function (index, element) {
-                globale_costo_gettoni += parseInt($.trim($(element).html()));
-            });
-            console.log(globale_num_gettoni);
-            console.log(globale_costo_gettoni);
-
-
-//            $("#result_list tbody tr:last > td").css("margin", "3px solid blue;");
-//            var tr_content = "<th></th>";
-//            for (var i=1; i <= ($("#result_list tr:last > td").length - 2); i++) {
-//                tr_content += '<td></td>'
-//            }
-//            $("#result_list tbody").append("<tr id=""></tr>")
+            $("#result_list tr:last").prepend(
+                "<th colspan='" + ($("#result_list tr:first").children().length -
+                    $("#result_list tr:last").children().length)  +"'>Totali:</th>");
+            $("#result_list tr:last").children().css("padding-top", "20px");
         });
     </script>
 {% endblock %}
 
 {% block content %}
 <div id="content-main">
-    <div style="margin: 20px 0; width: 280px; float: left;">
-        <form id="form_filter_2" method="get" action="">
+    <div id="div_form_filter">
+        <form id="form_filter" method="get" action="">
             <div class="field-data_svolgimento">
                 {{ form.as_p }}
                 <input type="submit" id="filter" value="Filtra">
@@ -103,10 +116,10 @@
             {% for row in table_rows %}
                 <tr>
                     {% for el in row %}
-                        {% if forloop.first %}
-                            <th class="{{ el.1 }}">{{ el.0 }}</th>
-                        {% elif forloop.revcounter <= 3 %}
+                        {% if forloop.revcounter <= 3 %}
                             <td class="presenze {% if forloop.revcounter == 1 %}totale_costo_gettoni{% elif forloop.revcounter == 2 %}totale_num_gettoni{% elif forloop.revcounter == 3 %}totale_num_presenze{% endif %}">{{ el }}</td>
+                        {% elif forloop.first %}
+                            <th class="{{ el.1 }}">{{ el.0 }}</th>
                         {% else %}
                             <td>{{ el.0 }}{% if el.0 == 'P' and el.1 > 0 %} ({{el.1}}&#8364;){% endif %}</td>
                         {% endif %}

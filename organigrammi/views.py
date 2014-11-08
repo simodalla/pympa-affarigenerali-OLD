@@ -81,4 +81,6 @@ class RiepiloghiPresenzeFormView(FormView):
             ['Totale Presenze', 'Totale Gettoni', 'Costo Totale Gettoni (&#8364;)'])
         context['table_rows'] = Presenza.objects.get_matrix_for_riepilogo(
             mandato, sessioni, with_assessori=request_data['assessori'])
+        context['table_rows'].append(
+            [sum(x) for x in list(zip(*context['table_rows']))[-3:]])
         return context
